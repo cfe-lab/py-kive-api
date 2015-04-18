@@ -72,7 +72,7 @@ class KiveAPI(object):
 
     def get_datasets(self):
         """
-        Returns a lit
+        Returns a list of Dataset objects.
 
         :return:
         """

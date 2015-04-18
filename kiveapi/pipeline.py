@@ -9,6 +9,6 @@ class Pipeline(object):
 
 
 class PipelineFamily(object):
-    def __init__(self):
+    def __init__(self, o):
         pass
 

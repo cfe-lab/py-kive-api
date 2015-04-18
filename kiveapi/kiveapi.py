@@ -1,4 +1,6 @@
 """
+Contains the main class for the accessing Kive's
+RESTful API.
 
 """
 from .dataset import Dataset
@@ -11,14 +13,18 @@ import requests
 
 class KiveAPI(object):
     """
-
+    The main KiveAPI class
     """
-    OAUTH_TOKEN = ""
+    SERVER_URL = ""
+    AUTH_TOKEN = ""
 
-    def __init__(self, server, token=OAUTH_TOKEN, authentication='OAuth'):
+    def __init__(self, server=SERVER_URL, token=OAUTH_TOKEN, authentication='OAuth'):
         self.server_url = server
         self.authentication_type = authentication
         self.token = token
+
+        if self.server_url[-1] != '/':
+            self.server_url += "/"
 
         self.endpoint_map = {
             'api_dataset_home': 'api/datasets/',
@@ -36,6 +42,14 @@ class KiveAPI(object):
 
     @staticmethod
     def get_token(url, username, password):
+        """
+        Queries the server at url for an authentication token.
+
+        :param url: Url to the Kive server
+        :param username: Username
+        :param password: Password
+        :return: A string representation of the user's token
+        """
         response = requests.post(url + "api/token-auth/", {'username': username, 'password': password})
 
         try:
@@ -44,7 +58,7 @@ class KiveAPI(object):
         except (ValueError, KeyError):
             return None
 
-    def _request(self, endpoint, method='GET', data={}, arg='', files={}):
+    def _request(self, endpoint, method='GET', data={}, files={}):
         """
         Internal functions used to form common requests
         to endpoints
@@ -55,7 +69,7 @@ class KiveAPI(object):
 
         # If we have a quick @ tag, lookup the
         if endpoint[0] == '@':
-            endpoint = self.endpoint_map[endpoint[1:]] + str(arg)
+            endpoint = self.endpoint_map[endpoint[1:]]
 
         headers = {'Authorization': 'Token %s' % self.token}
 
@@ -72,9 +86,9 @@ class KiveAPI(object):
 
     def get_datasets(self):
         """
-        Returns a list of Dataset objects.
+        Returns a list of all datasets.
 
-        :return:
+        :return: A list of Dataset objects.
         """
         data = self._request('@api_get_dataset')
         datasets = {'result': data['datasets']}
@@ -95,6 +109,7 @@ class KiveAPI(object):
         :param dataset_id:
         :return:
         """
+        # TODO: This method
         pass
 
     def get_pipeline_families(self):
@@ -137,7 +152,7 @@ class KiveAPI(object):
             'name': name,
             'description': description,
             'compound_datatype': cdt.id if cdt is not None else '__raw__'
-        }, '', {
+        }, {
             'dataset_file': handle,
         })
         return Dataset(data['dataset'])
@@ -149,7 +164,6 @@ class KiveAPI(object):
 
         :param pipeline: A Pipeline Object
         :param inputs: A list of Datasets
-        :param force: Forces a job to be submitted without CDT checks.
         :return: A RunStatus object
         """
 
@@ -161,4 +175,4 @@ class KiveAPI(object):
         post['pipeline'] = pipeline.pipeline_id
 
         data = self._request('@api_dataset_add', 'POST', post)
-        return RunStatus(data)
+        return RunStatus(data) # TODO:

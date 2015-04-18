@@ -1,5 +1,13 @@
+"""
+This module defines a wrapper for Kive's Dataset
+object, and some support methods.
+"""
+
 
 class Dataset(object):
+    """
+    A wrapper class for Kive's Dataset object
+    """
 
     def __init__(self, object):
         if type(object) == dict:
@@ -20,6 +28,11 @@ class Dataset(object):
     def __repr__(self):
         return '<Dataset (%d): "%s">' % (self.dataset_id, str(self))
 
-
     def download(self):
+        """
+        Downloads this dataset, creating a
+        new file handle.
+
+        :return: stream handle
+        """
         pass

@@ -1,8 +1,12 @@
 """
-
+This module defines a wrapper for Kive's CompoundDatatype
+object, and some support methods.
 """
 
 class CompoundDatatype:
+    """
+    A wrapper class for Kive's CompoundDatatype object
+    """
 
     def __init__(self, cdt):
 

@@ -1,12 +1,13 @@
 """
-
+This module defines a wrapper for Kive's Pipeline
+objects, and some support methods.
 """
 from .datatype import CompoundDatatype
 
 
 class PipelineInput(object):
     """
-
+    A wrapper class for Kive's TransformInput object
     """
 
     def __init__(self, obj):
@@ -26,7 +27,7 @@ class PipelineInput(object):
 
 class Pipeline(object):
     """
-
+    A wrapper class for Kive's Pipeline object
     """
 
     def __init__(self, obj):
@@ -55,7 +56,7 @@ class Pipeline(object):
 
 class PipelineFamily(object):
     """
-
+    A wrapper class for Kive's PipelineFamily object
     """
 
     def __init__(self, obj):

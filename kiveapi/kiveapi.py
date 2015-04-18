@@ -3,6 +3,8 @@
 """
 from .dataset import Dataset
 from .pipeline import PipelineFamily
+from .datatype import CompoundDatatype
+
 import requests
 
 
@@ -93,23 +95,30 @@ class KiveAPI(object):
 
     def get_pipeline_families(self):
         """
+        Returns a list of all pipeline families and
+        the pipeline revisions underneath each.
 
-        :return:
+        :return: List of PipelineFamily objects
         """
+
         data = self._request('@api_pipelines_get')
-        return [PipelineFamily(p) for p in data['families']]
+        return [PipelineFamily(c) for c in data['families']]
 
     def get_cdts(self):
         """
+        Returns a list of all current compound datatypes
 
-        :return:
+        :return: A list of CompoundDatatypes
         """
-        pass
+        data = self._request('@api_get_cdts')
+        return [CompoundDatatype(c) for c in data['compoundtypes']]
 
     def add_dataset(self, name, description, handle, cdt=None):
         """
+        Adds a dataset to kive under the user associated
+        with the token.
 
-        :return:
+        :return: Dataset object
         """
         data = self._request('@api_dataset_add', 'POST', {
             'name': name,
@@ -118,7 +127,7 @@ class KiveAPI(object):
         }, '', {
             'dataset_file': handle,
         })
-        return Dataset(data)
+        return Dataset(data['dataset'])
 
     def run_pipeline(self, pipeline, inputs):
         """

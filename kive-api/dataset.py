@@ -1,1 +1,8 @@
-__author__ = 'jjh13'
+
+class Dataset(object):
+
+    def __init__(self, object):
+        pass
+
+    def download(self):
+        pass

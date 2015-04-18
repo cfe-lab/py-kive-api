@@ -35,12 +35,13 @@ class Pipeline(object):
             self.revision_name = obj['revision_name']
             self.revision_number = obj['revision_number']
             self.inputs = [PipelineInput(i) for i in obj['inputs']]
+            self.inputs = sorted(self.inputs, key=lambda x: x.dataset_idx)
+
         else:
             self.pipeline_id = object
             self.revision_number = None
             self.revision_name = None
             self.inputs = None
-        print self.inputs
 
     def __str__(self):
         return '%s - rev %d' % (self.revision_name, self.revision_number) if self.revision_name is not None else 'N/A'

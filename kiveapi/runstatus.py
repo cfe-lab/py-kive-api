@@ -1,1 +1,4 @@
-__author__ = 'jjh13'
+
+class RunStatus(object):
+    def __init__(self, o):
+        pass

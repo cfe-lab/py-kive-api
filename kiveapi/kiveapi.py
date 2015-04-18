@@ -4,6 +4,7 @@
 from .dataset import Dataset
 from .pipeline import PipelineFamily
 from .datatype import CompoundDatatype
+from .runstatus import RunStatus
 
 import requests
 
@@ -27,10 +28,10 @@ class KiveAPI(object):
             'api_dataset_add': 'api/datasets/add-dataset/',
             'api_pipelines_home': 'api/pipelines/',
             'api_pipelines_get': 'api/pipelines/get-pipelines/',
-#            'api_pipelines_get_page': 'api/pipelines/get-pipelines/(?P<page>\d+)',
+            'api_pipelines_get_page': 'api/pipelines/get-pipelines/',
             'api_pipelines_startrun': 'api/pipelines/start-run/',
             'api_pipelines_get_the_runs': 'api/pipelines/get-active-runs/',
-#            'api_pipelines_runstat': 'api/pipelines/run-status/(?P<rtp_id>\d+)',
+            # 'api_pipelines_runstat': 'api/pipelines/run-status/(?P<rtp_id>\d+)',
         }
 
     @staticmethod
@@ -45,10 +46,11 @@ class KiveAPI(object):
 
     def _request(self, endpoint, method='GET', data={}, arg='', files={}):
         """
-        Internal
+        Internal functions used to form common requests
+        to endpoints
 
-        :param endpoint:
-        :return:
+        :param endpoint: Endpoint url
+        :return: json dictionary of results
         """
 
         # If we have a quick @ tag, lookup the
@@ -61,7 +63,7 @@ class KiveAPI(object):
         if method.upper() == 'GET':
             response = requests.get(self.server_url + endpoint, headers=headers)
         else:
-            response = requests.post(self.server_url  + endpoint, data, headers=headers, files=files)
+            response = requests.post(self.server_url + endpoint, data, headers=headers, files=files)
         try:
             return response.json()
         except ValueError:
@@ -70,20 +72,22 @@ class KiveAPI(object):
 
     def get_datasets(self):
         """
+        Returns a lit
 
         :return:
         """
         data = self._request('@api_get_dataset')
-        datasets = data['datasets']
+        datasets = {'result': data['datasets']}
 
-        def _load_more(next, page):
+        def _load_more(next, dats):
             if next is not None:
-                more = self._request('@api_get_dataset_page', 'GET', {}, page + 1)
-                datasets += more['datasets']
-                _load_more(more['next'], page + 1)
-        _load_more(data['next'], 1)
+                more = self._request(next[1:])
+                dats['result'] += more['datasets']
+                _load_more(more['next'], dats)
 
-        return [Dataset(d) for d in datasets]
+        _load_more(data['next'], datasets)
+
+        return [Dataset(d) for d in datasets['result']]
 
     def get_dataset(self, dataset_id):
         """
@@ -102,7 +106,16 @@ class KiveAPI(object):
         """
 
         data = self._request('@api_pipelines_get')
-        return [PipelineFamily(c) for c in data['families']]
+        families = {'result': data['families']}
+
+        def _load_more(next, fams):
+            if next is not None:
+                more = self._request(next[1:])
+                fams['result'] += more['families']
+                _load_more(more['next_page'], fams)
+        _load_more(data['next_page'], families)
+
+        return [PipelineFamily(c) for c in families['result']]
 
     def get_cdts(self):
         """
@@ -136,7 +149,16 @@ class KiveAPI(object):
 
         :param pipeline: A Pipeline Object
         :param inputs: A list of Datasets
+        :param force: Forces a job to be submitted without CDT checks.
         :return: A RunStatus object
         """
-        pass
 
+        # Check to see if we can even call this pipeline
+        if len(inputs) != len(pipeline.inputs):
+            return None
+
+        post = {('input_%d' % i): d.dataset_id for (i, d) in enumerate(inputs)}
+        post['pipeline'] = pipeline.pipeline_id
+
+        data = self._request('@api_dataset_add', 'POST', post)
+        return RunStatus(data)

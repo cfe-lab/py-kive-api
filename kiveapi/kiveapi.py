@@ -18,9 +18,8 @@ class KiveAPI(object):
     SERVER_URL = ""
     AUTH_TOKEN = ""
 
-    def __init__(self, server=SERVER_URL, token=OAUTH_TOKEN, authentication='OAuth'):
+    def __init__(self, server=SERVER_URL, token=AUTH_TOKEN):
         self.server_url = server
-        self.authentication_type = authentication
         self.token = token
 
         if self.server_url[-1] != '/':
@@ -73,6 +72,7 @@ class KiveAPI(object):
 
         headers = {'Authorization': 'Token %s' % self.token}
 
+        print self.server_url + endpoint
         # Choose method
         if method.upper() == 'GET':
             response = requests.get(self.server_url + endpoint, headers=headers)
@@ -109,7 +109,16 @@ class KiveAPI(object):
         :param dataset_id:
         :return:
         """
+
         # TODO: This method
+        pass
+
+    def find_datasets(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
         pass
 
     def get_pipeline_families(self):
@@ -132,12 +141,30 @@ class KiveAPI(object):
 
         return [PipelineFamily(c) for c in families['result']]
 
+    def get_pipeline(self, pipeline_id):
+        """
+
+        :param pipeline_id:
+        :return:
+        """
+        # TODO:
+        pass
+
+    def find_pipelines(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+        pass
+
     def get_cdts(self):
         """
         Returns a list of all current compound datatypes
 
         :return: A list of CompoundDatatypes
         """
+
         data = self._request('@api_get_cdts')
         return [CompoundDatatype(c) for c in data['compoundtypes']]
 
@@ -148,10 +175,11 @@ class KiveAPI(object):
 
         :return: Dataset object
         """
+
         data = self._request('@api_dataset_add', 'POST', {
             'name': name,
             'description': description,
-            'compound_datatype': cdt.id if cdt is not None else '__raw__'
+            'compound_datatype': cdt.cdt_id if cdt is not None else '__raw__'
         }, {
             'dataset_file': handle,
         })
@@ -171,8 +199,9 @@ class KiveAPI(object):
         if len(inputs) != len(pipeline.inputs):
             return None
 
-        post = {('input_%d' % i): d.dataset_id for (i, d) in enumerate(inputs)}
+        post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}
         post['pipeline'] = pipeline.pipeline_id
 
-        data = self._request('@api_dataset_add', 'POST', post)
-        return RunStatus(data) # TODO:
+        data = self._request('@api_pipelines_startrun', 'POST', post)
+
+        return RunStatus(data['run'], self) # TODO:

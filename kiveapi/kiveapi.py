@@ -185,7 +185,7 @@ class KiveAPI(object):
         })
         return Dataset(data['dataset'])
 
-    def run_pipeline(self, pipeline, inputs):
+    def run_pipeline(self, pipeline, inputs, force=False):
         """
         Checks that a pipeline has the correct inputs, then
         submits the job to kive.
@@ -199,9 +199,17 @@ class KiveAPI(object):
         if len(inputs) != len(pipeline.inputs):
             return None
 
+        if not force:
+            # Check to see if the CDT for each input matches the
+            # Expected CDT
+            zlist = zip(inputs, pipeline.inputs)
+
+            if any([pi.compounddatatype != dset.cdt for dset, pi in zlist]):
+                return None
+
+        # Construct the inputs
         post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}
         post['pipeline'] = pipeline.pipeline_id
 
         data = self._request('@api_pipelines_startrun', 'POST', post)
-
-        return RunStatus(data['run'], self) # TODO:
+        return RunStatus(data['run'], self)

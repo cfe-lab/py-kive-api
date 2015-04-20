@@ -74,4 +74,4 @@ class RunStatus(object):
 
         resurl = self.api._request(self.url)['results']
         datasets = self.api._request(resurl[1:])['results']
-        return [Dataset(d) for d in datasets]
+        return [Dataset(d, self.api) for d in datasets]

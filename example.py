@@ -12,13 +12,13 @@ kive = KiveAPI()
 fastq1 = kive.get_dataset(2)
 fastq2 = kive.get_dataset(3)
 
-# Get the data by filename
+# or get the data by filename
 fastq1 = kive.find_datasets(dataset_name='1234A_R1.fastq')[0]
 fastq2 = kive.find_datasets(dataset_name='1234A_R2.fastq')[0]
 
-print kive.get_pipeline_families()[1].family_id
-# Get the pipeline
-pipeline_family = kive.get_pipeline_family()
+# Get the pipeline by family ID
+pipeline_family = kive.get_pipeline_family(2)
+
 
 print 'Using data:'
 print fastq1, fastq2
@@ -33,11 +33,8 @@ status = kive.run_pipeline(
     [fastq1, fastq2]
 )
 
-print status.get_status()
-
+# Start polling Kive
 s = sched.scheduler(time.time, time.sleep)
-
-
 def check_run(sc, run):
     # do your stuff
     print run.get_status()
@@ -51,4 +48,9 @@ def check_run(sc, run):
 s.enter(5, 1, check_run, (s, status,))
 s.run()
 
-print 'Finished Run!'
+print 'Finished Run, nabbing files'
+
+for dataset in status.get_results():
+    file_handle = open(dataset.filename, 'w')
+    dataset.download(file_handle)
+    file_handle.close()

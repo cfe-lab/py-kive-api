@@ -17,6 +17,7 @@ class Dataset(object):
             self.name = obj['name']
             self.url = obj['download_url']
             self.cdt = CompoundDatatype(obj['compounddatatype'])
+            self.filename = obj['filename']
         else:
             self.dataset_id = obj
             self.name = 'N/A'
@@ -38,10 +39,11 @@ class Dataset(object):
         Downloads this dataset, creating a
         new file handle.
 
-        :return: stream handle
+        :return:
         """
 
-        response = requests.get(self.api.server_url + self.url, stream=True)
+        headers = {'Authorization': 'Token %s' % self.api.token}
+        response = requests.get(self.api.server_url + self.url[1:], stream=True, headers=headers)
 
         if not response.ok:
             return None

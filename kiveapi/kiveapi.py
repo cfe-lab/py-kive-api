@@ -106,7 +106,7 @@ class KiveAPI(object):
 
         _load_more(data['next'], datasets)
 
-        return [Dataset(d) for d in datasets['result']]
+        return [Dataset(d, self) for d in datasets['result']]
 
     def get_dataset(self, dataset_id):
         """
@@ -218,7 +218,7 @@ class KiveAPI(object):
         }, {
             'dataset_file': handle,
         })
-        return Dataset(data['dataset'])
+        return Dataset(data['dataset'], self)
 
     def run_pipeline(self, pipeline, inputs, force=False):
         """

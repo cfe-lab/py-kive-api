@@ -17,6 +17,9 @@ class RunStatus(object):
         self.url = obj['run_status'][1:]
         self.api = api
 
+    def _grab_stats(self):
+        return self.api._request(self.url)['run']
+
     def get_status(self):
         """
         Queries the server for the status
@@ -25,20 +28,39 @@ class RunStatus(object):
         :return: A dictionary with keys 'status' and
                 'progress'
         """
-        response = self.api._request(self.url)
+        status = self._grab_stats()['status']
 
-        if response is None:
-            return {
-                'status': 'Waiting to start',
-                'progress': '?',
-            }
+        if status == '?':
+            return "Waiting to start..."
 
-        # When complete, get url to get results
-        return {
-            'status': 'In progress',
-            'progress': '-'
-        }
+        if '!' in status:
+            return 'Run failed!'
 
+        if '*' in status and '.' not in status:
+            return 'Complete.'
+
+        return 'Running...'
+
+    def is_waiting(self):
+        return self._grab_stats()['status'] == '?'
+
+    def is_running(self):
+        status = self._grab_stats()['status']
+        return '.' in status and '!' not in status
+
+    def is_complete(self):
+        status = self._grab_stats()['status']
+        return ('.' not in status and status != '?') or '!' in status
+
+    def is_successful(self):
+        return '!' not in self._grab_stats()['status']
+
+    def get_progress(self):
+        return self._grab_stats()['status']
+
+    def get_progress_percent(self):
+        status = self._grab_stats()['status']
+        return 100*float(status.count('*'))/float(len(status) - status.count('-'))
 
     def get_results(self):
         """

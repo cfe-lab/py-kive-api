@@ -73,3 +73,12 @@ class PipelineFamily(object):
 
     def __repr__(self):
         return '<Pipeline family (%d): %s>' % (self.family_id, str(self))
+
+    def latest(self):
+        try:
+            return sorted(self.pipelines, key=lambda p: p.revision_number, reverse=True)[0]
+        except IndexError:
+            return None
+
+    def published_or_latest(self):
+        return self.published_version if self.published_version is not None else self.latest()

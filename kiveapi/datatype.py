@@ -32,3 +32,6 @@ class CompoundDatatype:
 
     def __eq__(self, other):
         return self.cdt_id == other.cdt_id or self.name == other.name
+
+    def __ne__(self, other):
+        return not (self == other)

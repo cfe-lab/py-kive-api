@@ -18,9 +18,15 @@ class KiveAPI(object):
     SERVER_URL = ""
     AUTH_TOKEN = ""
 
-    def __init__(self, server=SERVER_URL, token=AUTH_TOKEN):
+    def __init__(self, server=None, token=None):
         self.server_url = server
         self.token = token
+
+        if server is None:
+            self.server_url = KiveAPI.SERVER_URL
+
+        if token is None:
+            self.token = KiveAPI.AUTH_TOKEN
 
         if self.server_url[-1] != '/':
             self.server_url += "/"
@@ -72,7 +78,6 @@ class KiveAPI(object):
 
         headers = {'Authorization': 'Token %s' % self.token}
 
-        print self.server_url + endpoint
         # Choose method
         if method.upper() == 'GET':
             response = requests.get(self.server_url + endpoint, headers=headers)
@@ -105,13 +110,14 @@ class KiveAPI(object):
 
     def get_dataset(self, dataset_id):
         """
+        Gets a dataset in kive by its ID.
 
-        :param dataset_id:
-        :return:
+        :param dataset_id: Integer id
+        :return: Dataset object
         """
 
-        # TODO: This method
-        pass
+        # TODO: Make a new API route in Kive that looks up a specific ID
+        return self.find_datasets(dataset_id=dataset_id)[0]
 
     def find_datasets(self, **kwargs):
         """
@@ -119,7 +125,15 @@ class KiveAPI(object):
         :param kwargs:
         :return:
         """
-        pass
+        datasets = self.get_datasets()
+        ret = []
+        if 'dataset_id' in kwargs:
+            ret += filter(lambda d: d.dataset_id == kwargs['dataset_id'], datasets)
+
+        if 'dataset_name' in kwargs:
+            ret +=  filter(lambda d: d.name == kwargs['dataset_name'], datasets)
+
+        return ret
 
     def get_pipeline_families(self):
         """
@@ -141,22 +155,31 @@ class KiveAPI(object):
 
         return [PipelineFamily(c) for c in families['result']]
 
+
+    def get_pipeline_family(self, pipeline_fam_id):
+        """
+
+        :param pipeline_fam_id:
+        :return:
+        """
+        all_pf = self.get_pipeline_families()
+        try:
+            return filter(lambda x: x.family_id == pipeline_fam_id, all_pf)[0]
+        except IndexError:
+            return None
+
     def get_pipeline(self, pipeline_id):
         """
 
         :param pipeline_id:
         :return:
         """
-        # TODO:
-        pass
-
-    def find_pipelines(self, **kwargs):
-        """
-
-        :param kwargs:
-        :return:
-        """
-        pass
+        all_pf = self.get_pipeline_families()
+        for pf in all_pf:
+            valid = filter(lambda p: p.pipeline_id == pipeline_id, pf.pipelines())
+            if len(valid) >= 1:
+                return valid[0]
+        return None
 
     def get_cdts(self):
         """
@@ -167,6 +190,18 @@ class KiveAPI(object):
 
         data = self._request('@api_get_cdts')
         return [CompoundDatatype(c) for c in data['compoundtypes']]
+
+    def get_cdt(self, cdt_id):
+        """
+
+        :param cdt_id:
+        :return:
+        """
+        data = self.get_cdts()
+        try:
+            return filter(lambda c: cdt_id == c.cdt_if, data)
+        except IndexError:
+            return None
 
     def add_dataset(self, name, description, handle, cdt=None):
         """
@@ -204,8 +239,9 @@ class KiveAPI(object):
             # Expected CDT
             zlist = zip(inputs, pipeline.inputs)
 
-            if any([pi.compounddatatype != dset.cdt for dset, pi in zlist]):
-                return None
+            for dset, pi in zlist:
+                if dset.cdt != pi.compounddatatype:
+                    return None
 
         # Construct the inputs
         post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}

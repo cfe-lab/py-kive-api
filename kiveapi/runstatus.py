@@ -69,8 +69,9 @@ class RunStatus(object):
 
         :return: A list of Dataset objects
         """
-        if self.get_status()['status'] != 'Complete':
+        if not self.is_complete():
             return None
 
-        datasets = self.api._request(self.datasets_url)
+        resurl = self.api._request(self.url)['results']
+        datasets = self.api._request(resurl[1:])['results']
         return [Dataset(d) for d in datasets]

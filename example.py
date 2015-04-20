@@ -16,8 +16,9 @@ fastq2 = kive.get_dataset(3)
 fastq1 = kive.find_datasets(dataset_name='1234A_R1.fastq')[0]
 fastq2 = kive.find_datasets(dataset_name='1234A_R2.fastq')[0]
 
+print kive.get_pipeline_families()[1].family_id
 # Get the pipeline
-pipeline_family = kive.get_pipeline_families()[0]
+pipeline_family = kive.get_pipeline_family()
 
 print 'Using data:'
 print fastq1, fastq2

@@ -22,11 +22,9 @@ class RunStatus(object):
 
     def get_status(self):
         """
-        Queries the server for the status
-        of a run
+        Queries the server for the status of a run
 
-        :return: A dictionary with keys 'status' and
-                'progress'
+        :return: A description string of the status
         """
         status = self._grab_stats()['status']
 
@@ -42,23 +40,57 @@ class RunStatus(object):
         return 'Running...'
 
     def is_waiting(self):
+        """
+        Returns whether or not the run is queued
+        on the server for processing.
+
+        :return:
+        """
         return self._grab_stats()['status'] == '?'
 
     def is_running(self):
+        """
+        Returns whether or not the run is running
+        on the server
+
+        :return:
+        """
         status = self._grab_stats()['status']
         return '.' in status and '!' not in status
 
     def is_complete(self):
+        """
+        Returns whether or not the run has
+        completed.
+
+        :return:
+        """
         status = self._grab_stats()['status']
         return ('.' not in status and status != '?') or '!' in status
 
     def is_successful(self):
+        """
+        Returns whether the run was successful,
+        provided that it's also complete
+
+        :return:
+        """
         return '!' not in self._grab_stats()['status']
 
     def get_progress(self):
+        """
+        Gets the current run's progress bar
+
+        :return:
+        """
         return self._grab_stats()['status']
 
     def get_progress_percent(self):
+        """
+        Gets the current progress as a percentage.
+
+        :return:
+        """
         status = self._grab_stats()['status']
         return 100*float(status.count('*'))/float(len(status) - status.count('-'))
 
@@ -67,10 +99,11 @@ class RunStatus(object):
         Gets all the datasets that resulted from this
         pipeline (including intermediate results).
 
-        :return: A list of Dataset objects
+        :return: A list of Dataset objects, if the run is complete,
+        an empty list otherwise
         """
         if not self.is_complete():
-            return None
+            return []
 
         resurl = self.api._request(self.url)['results']
         datasets = self.api._request(resurl[1:])['results']

@@ -10,6 +10,7 @@ from .runstatus import RunStatus
 
 import requests
 
+from . import KiveMalformedDataException, KiveAuthException, KiveServerException
 
 class KiveAPI(object):
     """
@@ -41,8 +42,7 @@ class KiveAPI(object):
             'api_pipelines_get': 'api/pipelines/get-pipelines/',
             'api_pipelines_get_page': 'api/pipelines/get-pipelines/',
             'api_pipelines_startrun': 'api/pipelines/start-run/',
-            'api_pipelines_get_the_runs': 'api/pipelines/get-active-runs/',
-            # 'api_pipelines_runstat': 'api/pipelines/run-status/(?P<rtp_id>\d+)',
+            'api_pipelines_get_runs': 'api/pipelines/get-active-runs/',
         }
 
     @staticmethod
@@ -58,8 +58,7 @@ class KiveAPI(object):
         response = requests.post(url + "api/token-auth/", {'username': username, 'password': password})
 
         try:
-            dict = response.json()
-            return dict['token']
+            return response.json()['token']
         except (ValueError, KeyError):
             return None
 
@@ -84,10 +83,20 @@ class KiveAPI(object):
         else:
             response = requests.post(self.server_url + endpoint, data, headers=headers, files=files)
         try:
-            return response.json()
+
+            if 500 <= response.status_code < 599:
+                raise KiveServerException("Server 500 error (check server config '%s!')" % self.server_url)
+
+            json_data = response.json()
+            if 400 <= response.status_code < 499:
+                if 'detail' in json_data:
+                    raise KiveAuthException("Couldn't authorize request (%s)" % json_data['detail'])
+                raise KiveAuthException("Couldn't authorize request!")
+
+            else:
+                return json_data
         except ValueError:
-            print response.content
-        return None
+            raise KiveMalformedDataException("Malformed response from server! (check server config '%s!')" % self.server_url)
 
     def get_datasets(self):
         """
@@ -155,12 +164,12 @@ class KiveAPI(object):
 
         return [PipelineFamily(c) for c in families['result']]
 
-
     def get_pipeline_family(self, pipeline_fam_id):
         """
+        Returns a PipelineFamily object for a specific id
 
         :param pipeline_fam_id:
-        :return:
+        :return: PipelineFamily Object
         """
         all_pf = self.get_pipeline_families()
         try:
@@ -172,7 +181,7 @@ class KiveAPI(object):
         """
 
         :param pipeline_id:
-        :return:
+        :return: Pipeline object
         """
         all_pf = self.get_pipeline_families()
         for pf in all_pf:
@@ -185,7 +194,7 @@ class KiveAPI(object):
         """
         Returns a list of all current compound datatypes
 
-        :return: A list of CompoundDatatypes
+        :return: A list of CompoundDatatypes objects
         """
 
         data = self._request('@api_get_cdts')
@@ -193,9 +202,10 @@ class KiveAPI(object):
 
     def get_cdt(self, cdt_id):
         """
+        Returns a CDT object for a specific id.
 
         :param cdt_id:
-        :return:
+        :return: CompoundDatatype object.
         """
         data = self.get_cdts()
         try:
@@ -232,7 +242,12 @@ class KiveAPI(object):
 
         # Check to see if we can even call this pipeline
         if len(inputs) != len(pipeline.inputs):
-            return None
+            raise KiveMalformedDataException(
+                'Number of inputs to pipeline is not equal to the number of given inputs (%d != %d)' % (
+                    len(inputs),
+                    len(pipeline.inputs)
+                )
+            )
 
         if not force:
             # Check to see if the CDT for each input matches the
@@ -241,7 +256,9 @@ class KiveAPI(object):
 
             for dset, pi in zlist:
                 if dset.cdt != pi.compounddatatype:
-                    return None
+                    raise KiveMalformedDataException(
+                        'Content check failed (%s != %s)! ' % (str(dset.cdt), str(pi.compounddatatype))
+                    )
 
         # Construct the inputs
         post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}

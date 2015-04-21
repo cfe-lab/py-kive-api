@@ -2,6 +2,7 @@
 This module defines a wrapper for Kive's CompoundDatatype
 object, and some support methods.
 """
+from . import KiveMalformedDataException
 
 
 class CompoundDatatype:
@@ -10,16 +11,20 @@ class CompoundDatatype:
     """
 
     def __init__(self, cdt):
-
-        if cdt is None:
-            self.cdt_id = '__raw__'
-            self.name = 'Raw CDT'
-        elif type(cdt) == dict:
-            self.cdt_id = cdt['id']
-            self.name = cdt['representation']
-        else:
-            self.cdt_id = cdt
-            self.name = 'Unknown CDT'
+        try:
+            if cdt is None:
+                self.cdt_id = '__raw__'
+                self.name = 'Raw CDT'
+            elif type(cdt) == dict:
+                self.cdt_id = cdt['id']
+                self.name = cdt['representation']
+            else:
+                self.cdt_id = cdt
+                self.name = 'Unknown CDT'
+        except (ValueError, IndexError):
+            raise KiveMalformedDataException(
+                'Server gave malformed CDT object:\n%s' % cdt
+            )
 
     def __str__(self):
         return self.name

@@ -3,6 +3,7 @@ This module defines a wrapper for Kive's Pipeline
 objects, and some support methods.
 """
 from .datatype import CompoundDatatype
+from . import KiveMalformedDataException
 
 
 class PipelineInput(object):
@@ -11,9 +12,15 @@ class PipelineInput(object):
     """
 
     def __init__(self, obj):
-        self.dataset_idx = obj['dataset_idx']
-        self.dataset_name = obj['dataset_name']
-        self.compounddatatype = CompoundDatatype(obj['compounddatatype'])
+        try:
+            self.dataset_idx = obj['dataset_idx']
+            self.dataset_name = obj['dataset_name']
+            self.compounddatatype = CompoundDatatype(obj['compounddatatype'])
+
+        except (ValueError, IndexError):
+            raise KiveMalformedDataException(
+                'Server gave malformed PipelineInput object:\n%s' % obj
+            )
 
     def __str__(self):
         return self.dataset_name
@@ -31,18 +38,24 @@ class Pipeline(object):
     """
 
     def __init__(self, obj):
-        if type(obj) == dict:
-            self.pipeline_id = obj['id']
-            self.revision_name = obj['revision_name']
-            self.revision_number = obj['revision_number']
-            self.inputs = [PipelineInput(i) for i in obj['inputs']]
-            self.inputs = sorted(self.inputs, key=lambda x: x.dataset_idx)
+        try:
+            if type(obj) == dict:
+                self.pipeline_id = obj['id']
+                self.revision_name = obj['revision_name']
+                self.revision_number = obj['revision_number']
+                self.inputs = [PipelineInput(i) for i in obj['inputs']]
+                self.inputs = sorted(self.inputs, key=lambda x: x.dataset_idx)
 
-        else:
-            self.pipeline_id = object
-            self.revision_number = None
-            self.revision_name = None
-            self.inputs = None
+            else:
+                self.pipeline_id = object
+                self.revision_number = None
+                self.revision_name = None
+                self.inputs = None
+
+        except (ValueError, IndexError):
+            raise KiveMalformedDataException(
+                'Server gave malformed Pipeline object:\n%s' % obj
+            )
 
     def __str__(self):
         return '%s - rev %d' % (self.revision_name, self.revision_number) if self.revision_name is not None else 'N/A'
@@ -60,10 +73,16 @@ class PipelineFamily(object):
     """
 
     def __init__(self, obj):
-        self.family_id = obj['id']
-        self.name = obj['name']
-        self.pipelines = [Pipeline(p) for p in obj['members']]
-        self.published_version = Pipeline(obj['published_version']) if obj['published_version'] is not None else None
+        try:
+            self.family_id = obj['id']
+            self.name = obj['name']
+            self.pipelines = [Pipeline(p) for p in obj['members']]
+            self.published_version = Pipeline(obj['published_version']) if obj['published_version'] is not None else None
+
+        except (ValueError, IndexError):
+            raise KiveMalformedDataException(
+                'Server gave malformed PipelineFamily object:\n%s' % obj
+            )
 
     def __str__(self):
         return self.name

@@ -4,9 +4,10 @@ import time
 
 
 URL = 'http://127.0.0.1:8000/'
-KiveAPI.AUTH_TOKEN = KiveAPI.get_token(URL, 'kive', 'shipyard')
+KiveAPI.AUTH_TOKEN = KiveAPI.get_token(URL, 'kive', 'kive')
 KiveAPI.SERVER_URL = URL
 
+print KiveAPI.AUTH_TOKEN
 # I recommend not using get_token to retrieve the auth token
 # (see example_2.py). Putting a password in a distributed file
 # is not recommended. An auth token, however, can easily be

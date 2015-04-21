@@ -3,7 +3,7 @@ import sched
 import time
 
 # This is how I would recommend authenticating to Kive
-KiveAPI.AUTH_TOKEN = '5869bf38f30bb41d86b72fb4a7d71cd08365a8be'
+KiveAPI.AUTH_TOKEN = 'b736b807115369b22221ad1e893f26132ed03e19'
 KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
 
 kive = KiveAPI()

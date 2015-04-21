@@ -2,25 +2,15 @@ from kiveapi.kiveapi import KiveAPI
 import sched
 import time
 
-
-URL = 'http://127.0.0.1:8000/'
-KiveAPI.AUTH_TOKEN = KiveAPI.get_token(URL, 'kive', 'shipyard')
-KiveAPI.SERVER_URL = URL
-
-# I recommend not using get_token to retrieve the auth token
-# (see example_2.py). Putting a password in a distributed file
-# is not recommended. An auth token, however, can easily be
-# revoked, so that should be the preferred method of authentication
+# This is how I would recommend authenticating to Kive
+KiveAPI.AUTH_TOKEN = '5869bf38f30bb41d86b72fb4a7d71cd08365a8be'
+KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
 
 kive = KiveAPI()
 
-# Get the data by ID
-fastq1 = kive.get_dataset(2)
-fastq2 = kive.get_dataset(3)
-
-# or get the data by name
-fastq1 = kive.find_datasets(dataset_name='1234A_R1.fastq')[0]
-fastq2 = kive.find_datasets(dataset_name='1234A_R2.fastq')[0]
+# Upload data
+fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'))
+fastq2 = kive.add_dataset('New fastq file 2', 'None', open('exfastq2.fastq', 'r'))
 
 # Get the pipeline by family ID
 pipeline_family = kive.get_pipeline_family(2)
@@ -53,7 +43,6 @@ s.enter(5, 1, check_run, (s, status,))
 s.run()
 
 print 'Finished Run, nabbing files'
-
 for dataset in status.get_results():
     file_handle = open(dataset.filename, 'w')
     dataset.download(file_handle)

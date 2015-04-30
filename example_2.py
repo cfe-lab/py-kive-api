@@ -1,6 +1,8 @@
-from kiveapi.kiveapi import KiveAPI
+import os
 import sched
 import time
+
+from kiveapi.kiveapi import KiveAPI
 
 # This is how I would recommend authenticating to Kive
 KiveAPI.AUTH_TOKEN = 'b736b807115369b22221ad1e893f26132ed03e19'
@@ -44,6 +46,5 @@ s.run()
 
 print 'Finished Run, nabbing files'
 for dataset in status.get_results():
-    file_handle = open(dataset.filename, 'w')
-    dataset.download(file_handle)
-    file_handle.close()
+    with open(os.path.join('results', dataset.filename), 'wb') as file_handle:
+        dataset.download(file_handle)

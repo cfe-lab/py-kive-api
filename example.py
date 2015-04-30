@@ -1,7 +1,8 @@
-from kiveapi.kiveapi import KiveAPI
+import os
 import sched
 import time
 
+from kiveapi.kiveapi import KiveAPI
 
 URL = 'http://127.0.0.1:8000/'
 KiveAPI.AUTH_TOKEN = KiveAPI.get_token(URL, 'kive', 'kive')
@@ -32,6 +33,8 @@ print fastq1, fastq2
 print 'With pipeline:'
 print pipeline_family.published_or_latest()
 
+print kive.get_cdt(3)
+
 # Run the pipeline
 status = kive.run_pipeline(
     pipeline_family.published_or_latest(),
@@ -56,6 +59,5 @@ s.run()
 print 'Finished Run, nabbing files'
 
 for dataset in status.get_results():
-    file_handle = open(dataset.filename, 'w')
-    dataset.download(file_handle)
-    file_handle.close()
+    with open(os.path.join('results', dataset.filename), 'wb') as file_handle:
+        dataset.download(file_handle)

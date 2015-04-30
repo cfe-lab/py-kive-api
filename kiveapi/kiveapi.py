@@ -209,7 +209,7 @@ class KiveAPI(object):
         """
         data = self.get_cdts()
         try:
-            return filter(lambda c: cdt_id == c.cdt_if, data)
+            return filter(lambda c: cdt_id == c.cdt_id, data)
         except IndexError:
             return None
 

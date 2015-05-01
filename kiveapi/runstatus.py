@@ -14,11 +14,11 @@ class RunStatus(object):
 
     def __init__(self, obj, api):
         self.rtp_id = obj['id']
-        self.url = obj['run_status'][1:]
+        self.url = obj['run_status']
         self.api = api
 
     def _grab_stats(self):
-        return self.api._request(self.url)['run']
+        return self.api.get(self.url).json()['run']
 
     def get_status(self):
         """
@@ -26,6 +26,7 @@ class RunStatus(object):
 
         :return: A description string of the status
         """
+        # TODO: Make change kive to return sane overall statuses
         status = self._grab_stats()['status']
 
         if status == '?':
@@ -105,6 +106,6 @@ class RunStatus(object):
         if not self.is_complete():
             return []
 
-        resurl = self.api._request(self.url)['results']
-        datasets = self.api._request(resurl[1:])['results']
+        resurl = self.api.get(self.url).json()['results']
+        datasets = self.api.get(resurl).json()['results']
         return [Dataset(d, self.api) for d in datasets]

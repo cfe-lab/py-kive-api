@@ -47,8 +47,7 @@ class Dataset(object):
         :param handle: A file handle
         """
 
-        headers = {'Authorization': 'Token %s' % self.api.token}
-        response = requests.get(self.api.server_url + self.url[1:], stream=True, headers=headers)
+        response = self.api.get(self.url, download=True)
 
         if 400 <= response.status_code < 499:
             raise KiveAuthException("Authentication failed for download (%s)!" % self.url)

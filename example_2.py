@@ -3,10 +3,8 @@ import sched
 import time
 
 # This is how I would recommend authenticating to Kive
-KiveAPI.AUTH_TOKEN = 'b736b807115369b22221ad1e893f26132ed03e19'
 KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
-
-kive = KiveAPI()
+kive = KiveAPI('kive', 'kive')
 
 # Upload data
 fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'))

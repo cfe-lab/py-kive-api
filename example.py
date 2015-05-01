@@ -3,17 +3,8 @@ import sched
 import time
 
 
-URL = 'http://127.0.0.1:8000/'
-KiveAPI.AUTH_TOKEN = KiveAPI.get_token(URL, 'kive', 'kive')
-KiveAPI.SERVER_URL = URL
-
-print KiveAPI.AUTH_TOKEN
-# I recommend not using get_token to retrieve the auth token
-# (see example_2.py). Putting a password in a distributed file
-# is not recommended. An auth token, however, can easily be
-# revoked, so that should be the preferred method of authentication
-
-kive = KiveAPI()
+KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
+kive = KiveAPI('kive', 'kive')
 
 # Get the data by ID
 fastq1 = kive.get_dataset(2)

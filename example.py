@@ -24,8 +24,6 @@ print fastq1, fastq2
 print 'With pipeline:'
 print pipeline_family.published_or_latest()
 
-print kive.get_cdt(3)
-
 # Run the pipeline
 status = kive.run_pipeline(
     pipeline_family.published_or_latest(),

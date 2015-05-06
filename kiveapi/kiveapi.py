@@ -4,7 +4,7 @@ RESTful API.
 
 """
 from .dataset import Dataset
-from .pipeline import PipelineFamily
+from .pipeline import PipelineFamily, Pipeline
 from .datatype import CompoundDatatype
 from .runstatus import RunStatus
 
@@ -28,15 +28,23 @@ class KiveAPI(Session):
             self.server_url = self.server_url[:-1]
 
         self.endpoint_map = {
-            'api_dataset_home': '/api/datasets/',
             'api_auth': '/api/auth/',
-            'api_get_cdts': '/api/datasets/get-datatypes/',
-            'api_get_dataset': '/api/datasets/get-datasets/',
-            'api_get_dataset_page': '/api/datasets/get-datasets/',  # page
-            'api_dataset_add': '/api/datasets/add-dataset/',
-            'api_pipelines_home': '/api/pipelines/',
-            'api_pipelines_get': '/api/pipelines/get-pipelines/',
-            'api_pipelines_get_page': '/api/pipelines/get-pipelines/',
+            'api_get_cdts': '/api/compounddatatypes/',
+            'api_get_cdt': '/api/compounddatatypes/{cdt-id}/',
+
+            'api_get_datasets': '/api/datasets/',
+            'api_get_dataset': '/api/datasets/{dataset-id}/',
+            'api_dataset_add': '/api/datasets/',
+
+            'api_pipeline_families': '/api/pipeline_family/',
+            'api_pipeline_family': '/api/pipeline_family/{family-id}/',
+
+            'api_pipelines': '/api/pipeline/',
+            'api_pipeline': '/api/pipeline/{pipeline-id}/',
+
+            'api_runs': '/api/runs/',
+            'api_run': '/api/runs/{run-id}/',
+
             'api_pipelines_startrun': '/api/pipelines/start-run/',
             'api_pipelines_get_runs': '/api/pipelines/get-active-runs/',
         }
@@ -56,6 +64,10 @@ class KiveAPI(Session):
                 raise KiveServerException("Server 500 error (check server config '%s!')" % self.server_url)
             if not download:
                 json_data = response.json()
+
+            if response.status_code == 404:
+                return KiveServerException('Resource not found!')
+
             if 400 <= response.status_code < 499:
                 if not download and 'detail' in json_data:
                     raise KiveAuthException("Couldn't authorize request (%s)" % json_data['detail'])
@@ -70,6 +82,10 @@ class KiveAPI(Session):
         nargs = list(args)
         nargs[0] = self._prep_url(nargs[0])
         download = False
+
+        if 'context' in kwargs:
+            nargs[0] = nargs[0].format(**kwargs['context'])
+            del kwargs['context']
 
         if 'download' in kwargs and kwargs['download']:
             download = kwargs['download']
@@ -100,18 +116,9 @@ class KiveAPI(Session):
 
         :return: A list of Dataset objects.
         """
-        data = self.get('@api_get_dataset').json()
-        datasets = {'result': data['datasets']}
 
-        def _load_more(next, dats):
-            if next is not None:
-                more = self.get(next).json()
-                dats['result'] += more['datasets']
-                _load_more(more['next'], dats)
-
-        _load_more(data['next'], datasets)
-
-        return [Dataset(d, self) for d in datasets['result']]
+        datasets = self.get('@api_get_datasets').json()
+        return [Dataset(d, self) for d in datasets]
 
     def get_dataset(self, dataset_id):
         """
@@ -121,8 +128,8 @@ class KiveAPI(Session):
         :return: Dataset object
         """
 
-        # TODO: Make a new API route in Kive that looks up a specific ID
-        return self.find_datasets(dataset_id=dataset_id)[0]
+        dataset = self.get('@api_get_dataset', context={'dataset-id': dataset_id}).json()
+        return Dataset(dataset, self)
 
     def find_datasets(self, **kwargs):
         """
@@ -136,7 +143,7 @@ class KiveAPI(Session):
             ret += filter(lambda d: d.dataset_id == kwargs['dataset_id'], datasets)
 
         if 'dataset_name' in kwargs:
-            ret +=  filter(lambda d: d.name == kwargs['dataset_name'], datasets)
+            ret += filter(lambda d: d.name == kwargs['dataset_name'], datasets)
 
         return ret
 
@@ -148,17 +155,8 @@ class KiveAPI(Session):
         :return: List of PipelineFamily objects
         """
 
-        data = self.get('@api_pipelines_get').json()
-        families = {'result': data['families']}
-
-        def _load_more(next, fams):
-            if next is not None:
-                more = self.get(next).json()
-                fams['result'] += more['families']
-                _load_more(more['next_page'], fams)
-        _load_more(data['next_page'], families)
-
-        return [PipelineFamily(c) for c in families['result']]
+        families = self.get('@api_pipeline_families').json()
+        return [PipelineFamily(c) for c in families]
 
     def get_pipeline_family(self, pipeline_fam_id):
         """
@@ -167,11 +165,13 @@ class KiveAPI(Session):
         :param pipeline_fam_id:
         :return: PipelineFamily Object
         """
-        all_pf = self.get_pipeline_families()
-        try:
-            return filter(lambda x: x.family_id == pipeline_fam_id, all_pf)[0]
-        except IndexError:
-            return None
+        family = self.get('@api_pipeline_family', context={'family-id': pipeline_fam_id}).json()
+        return PipelineFamily(family)
+
+    def get_pipelines(self):
+        pipelines = self.get('@api_pipelines').json()
+        print pipelines
+        return [Pipeline(c) for c in pipelines]
 
     def get_pipeline(self, pipeline_id):
         """
@@ -179,12 +179,8 @@ class KiveAPI(Session):
         :param pipeline_id:
         :return: Pipeline object
         """
-        all_pf = self.get_pipeline_families()
-        for pf in all_pf:
-            valid = filter(lambda p: p.pipeline_id == pipeline_id, pf.pipelines())
-            if len(valid) >= 1:
-                return valid[0]
-        return None
+        pipeline = self.get('@api_pipeline', context={'pipeline-id': pipeline_id}).json()
+        return Pipeline(pipeline)
 
     def get_cdts(self):
         """
@@ -194,7 +190,7 @@ class KiveAPI(Session):
         """
 
         data = self.get('@api_get_cdts').json()
-        return [CompoundDatatype(c) for c in data['compoundtypes']]
+        return [CompoundDatatype(c) for c in data]
 
     def get_cdt(self, cdt_id):
         """
@@ -203,11 +199,8 @@ class KiveAPI(Session):
         :param cdt_id:
         :return: CompoundDatatype object.
         """
-        data = self.get_cdts()
-        try:
-            return filter(lambda c: cdt_id == c.cdt_if, data)
-        except IndexError:
-            return None
+        data = self.get('@api_get_cdt', context={'cdt-id': cdt_id}).json()
+        return CompoundDatatype(data)
 
     def add_dataset(self, name, description, handle, cdt=None):
         """
@@ -217,14 +210,14 @@ class KiveAPI(Session):
         :return: Dataset object
         """
 
-        data = self.post('@api_dataset_add', {
+        dataset = self.post('@api_dataset_add', {
             'name': name,
             'description': description,
             'compound_datatype': cdt.cdt_id if cdt is not None else '__raw__'
         }, files={
             'dataset_file': handle,
         }).json()
-        return Dataset(data['dataset'], self)
+        return Dataset(dataset, self)
 
     def run_pipeline(self, pipeline, inputs, force=False):
         """
@@ -260,5 +253,5 @@ class KiveAPI(Session):
         post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}
         post['pipeline'] = pipeline.pipeline_id
 
-        data = self.post('@api_pipelines_startrun', post).json()
-        return RunStatus(data['run'], self)
+        run = self.post('@api_runs', post).json()
+        return RunStatus(run, self)

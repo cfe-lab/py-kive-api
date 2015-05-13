@@ -4,7 +4,6 @@ object, and some support methods.
 """
 from .datatype import CompoundDatatype
 from . import KiveServerException, KiveAuthException, KiveMalformedDataException
-import requests
 
 
 class Dataset(object):
@@ -16,16 +15,11 @@ class Dataset(object):
         try:
             if type(obj) == dict:
                 self.dataset_id = obj['id']
-                self.name = obj['name']
-                self.url = obj['download_url']
-                self.cdt = CompoundDatatype(obj['compounddatatype'])
                 self.filename = obj['filename']
-            else:
-                self.dataset_id = obj
-                self.name = 'N/A'
-                self.url = None
-                self.cdt = CompoundDatatype(None)
-        except (ValueError, IndexError):
+                self.name = obj['name'] if 'name' in obj else obj['output_name']
+                self.cdt = CompoundDatatype(obj['compounddatatype']) if 'compounddatatype' in obj else None
+
+        except (ValueError, IndexError, KeyError):
             raise KiveMalformedDataException(
                 'Server gave malformed Dataset object:\n%s' % obj
             )
@@ -47,7 +41,7 @@ class Dataset(object):
         :param handle: A file handle
         """
 
-        response = self.api.get(self.url, download=True)
+        response = self.api.get("@api_dataset_dl", context={'dataset-id': self.dataset_id}, download=True)
 
         if 400 <= response.status_code < 499:
             raise KiveAuthException("Authentication failed for download (%s)!" % self.url)

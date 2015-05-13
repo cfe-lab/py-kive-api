@@ -15,7 +15,7 @@ class RunStatus(object):
     def __init__(self, obj, api):
         self.rtp_id = obj['id']
         self.url = obj['run_status']
-        self.results_url = obj['run_results']
+        self.results_url = obj['run_outputs']
         self.api = api
 
     def _grab_stats(self):
@@ -107,5 +107,5 @@ class RunStatus(object):
         if not self.is_complete():
             return []
 
-        datasets = self.api.get(self.results_url).json()
-        return [Dataset(d, self.api) for d in datasets]
+        datasets = self.api.get(self.results_url).json()['run']['output_summary']
+        return [Dataset(d, self.api) for d in datasets if d['filename'] is not None]

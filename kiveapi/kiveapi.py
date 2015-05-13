@@ -35,12 +35,13 @@ class KiveAPI(Session):
             'api_get_datasets': '/api/datasets/',
             'api_get_dataset': '/api/datasets/{dataset-id}/',
             'api_dataset_add': '/api/datasets/',
+            'api_dataset_dl': '/api/datasets/{dataset-id}/download/',
 
-            'api_pipeline_families': '/api/pipeline_family/',
-            'api_pipeline_family': '/api/pipeline_family/{family-id}/',
+            'api_pipeline_families': '/api/pipelinefamilies/',
+            'api_pipeline_family': '/api/pipelinefamilies/{family-id}/',
 
-            'api_pipelines': '/api/pipeline/',
-            'api_pipeline': '/api/pipeline/{pipeline-id}/',
+            'api_pipelines': '/api/pipelines/',
+            'api_pipeline': '/api/pipelines/{pipeline-id}/',
 
             'api_runs': '/api/runs/',
             'api_run': '/api/runs/{run-id}/',

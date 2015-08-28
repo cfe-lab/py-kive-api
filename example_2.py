@@ -9,8 +9,8 @@ KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
 kive = KiveAPI('kive', 'kive')
 
 # Upload data
-fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'))
-fastq2 = kive.add_dataset('New fastq file 2', 'None', open('exfastq2.fastq', 'r'))
+fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'), None, None, ["Everyone"])
+fastq2 = kive.add_dataset('New fastq file 2', 'None', open('exfastq2.fastq', 'r'), None, None, ["Everyone"])
 
 # Get the pipeline by family ID
 pipeline_family = kive.get_pipeline_family(2)
@@ -30,7 +30,6 @@ status = kive.run_pipeline(
 # Start polling Kive
 s = sched.scheduler(time.time, time.sleep)
 def check_run(sc, run):
-    # do your stuff
     print run.get_status()
 
     if run.is_running() or run.is_complete():

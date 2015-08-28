@@ -18,7 +18,7 @@ class KiveAPI(Session):
     """
     SERVER_URL = ""
 
-    def __init__(self, username, password, server = None):
+    def __init__(self, username, password, server=None, verify=True):
         self.server_url = server
 
         if server is None:
@@ -46,11 +46,13 @@ class KiveAPI(Session):
             'api_runs': '/api/runs/',
             'api_run': '/api/runs/{run-id}/',
 
-            'api_pipelines_startrun': '/api/pipelines/start-run/',
-            'api_pipelines_get_runs': '/api/pipelines/get-active-runs/',
         }
         super(KiveAPI, self).__init__()
+        self.verify = verify
         self.csrf_token = self.post('@api_auth', {'username': username, 'password': password}).json()['csrf_token']
+        self.headers.update({'referer': self.server_url})
+        print self.csrf_token
+        print "OK"
 
     def _prep_url(self, url):
         if url[0] == '@':
@@ -74,10 +76,9 @@ class KiveAPI(Session):
                     raise KiveAuthException("Couldn't authorize request (%s)" % json_data['detail'])
                 raise KiveAuthException("Couldn't authorize request!")
 
-            else:
-                return response
         except ValueError:
             raise KiveMalformedDataException("Malformed response from server! (check server config '%s!')" % self.server_url)
+        return response
 
     def get(self, *args, **kwargs):
         nargs = list(args)
@@ -99,6 +100,7 @@ class KiveAPI(Session):
         nargs[0] = self._prep_url(nargs[0])
         if hasattr(self, 'csrf_token'):
             nargs[1]['csrfmiddlewaretoken'] = self.csrf_token
+        print args
         return self._validate_response(super(KiveAPI, self).post(*nargs, **kwargs))
 
     def put(self, *args, **kwargs):
@@ -171,7 +173,6 @@ class KiveAPI(Session):
 
     def get_pipelines(self):
         pipelines = self.get('@api_pipelines').json()
-        print pipelines
         return [Pipeline(c) for c in pipelines]
 
     def get_pipeline(self, pipeline_id):
@@ -203,17 +204,21 @@ class KiveAPI(Session):
         data = self.get('@api_get_cdt', context={'cdt-id': cdt_id}).json()
         return CompoundDatatype(data)
 
-    def add_dataset(self, name, description, handle, cdt=None):
+    def add_dataset(self, name, description, handle, cdt=None, users=None, groups=None):
         """
         Adds a dataset to kive under the user associated
         with the token.
 
         :return: Dataset object
         """
+        groups_allowed = [] if groups is None else groups
+        users_allowed = [] if users is None else users
 
         dataset = self.post('@api_dataset_add', {
             'name': name,
             'description': description,
+            'users_allowed': users_allowed,
+            'groups_allowed': groups_allowed,
             'compound_datatype': cdt.cdt_id if cdt is not None else '__raw__'
         }, files={
             'dataset_file': handle,
@@ -244,10 +249,10 @@ class KiveAPI(Session):
             # Expected CDT
             zlist = zip(inputs, pipeline.inputs)
 
-            for dset, pi in zlist:
-                if dset.cdt != pi.compounddatatype:
+            for dset, pipeline_instance in zlist:
+                if dset.cdt != pipeline_instance.compounddatatype:
                     raise KiveMalformedDataException(
-                        'Content check failed (%s != %s)! ' % (str(dset.cdt), str(pi.compounddatatype))
+                        'Content check failed (%s != %s)! ' % (str(dset.cdt), str(pipeline_instance.compounddatatype))
                     )
 
         # Construct the inputs

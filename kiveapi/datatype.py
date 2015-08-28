@@ -20,7 +20,7 @@ class CompoundDatatype:
                 self.name = cdt['representation']
             else:
                 self.cdt_id = cdt
-                self.name = 'Unknown CDT'
+                self.name = 'Unknown CDT structure'
         except (ValueError, IndexError):
             raise KiveMalformedDataException(
                 'Server gave malformed CDT object:\n%s' % cdt

@@ -15,7 +15,8 @@ class PipelineInput(object):
         try:
             self.dataset_idx = obj['dataset_idx']
             self.dataset_name = obj['dataset_name']
-            self.compounddatatype = CompoundDatatype(obj['compounddatatype'])
+            self.compounddatatype = CompoundDatatype(None) if obj['structure'] is None else \
+                CompoundDatatype(obj['structure']['compounddatatype'])
 
         except (ValueError, IndexError):
             raise KiveMalformedDataException(

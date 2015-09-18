@@ -52,3 +52,11 @@ class Dataset(object):
             if not block:
                 break
             handle.write(block)
+
+    def read(self):
+        """
+        Returns an iterator to data set
+        :return:
+        """
+        response = self.api.get("@api_dataset_dl", context={'dataset-id': self.dataset_id}, download=True)
+

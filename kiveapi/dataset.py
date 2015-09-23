@@ -15,6 +15,7 @@ class Dataset(object):
         try:
             if type(obj) == dict:
                 self.dataset_id = obj['id']
+                self.symbolicdataset_id = obj['symbolic_id']
                 self.filename = obj['filename']
                 self.name = obj['name'] if 'name' in obj else obj['output_name']
                 self.cdt = CompoundDatatype(obj['compounddatatype']) if 'compounddatatype' in obj else None

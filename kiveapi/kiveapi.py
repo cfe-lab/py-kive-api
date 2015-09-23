@@ -77,7 +77,8 @@ class KiveAPI(Session):
                 raise KiveAuthException("Couldn't authorize request!")
 
         except ValueError:
-            raise KiveMalformedDataException("Malformed response from server! (check server config '%s!')" % self.server_url)
+            raise KiveMalformedDataException("Malformed response from server! (check server config '%s!')\n%s" %
+                                             (self.server_url, response))
         return response
 
     def get(self, *args, **kwargs):
@@ -256,7 +257,7 @@ class KiveAPI(Session):
                     )
 
         # Construct the inputs
-        post = {('input_%d' % (i+1)): d.dataset_id for (i, d) in enumerate(inputs)}
+        post = {('input_%d' % (i+1)): d.symbolicdataset_id for (i, d) in enumerate(inputs)}
         post['pipeline'] = pipeline.pipeline_id
 
         run = self.post('@api_runs', post).json()

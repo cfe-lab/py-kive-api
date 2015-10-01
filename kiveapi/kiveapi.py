@@ -69,7 +69,10 @@ class KiveAPI(Session):
                 json_data = response.json()
 
             if response.status_code == 404:
-                return KiveServerException('Resource not found!')
+                raise KiveServerException('Resource not found!')
+
+            if response.status_code in (400, 409):
+                raise KiveMalformedDataException('Content verification error!')
 
             if 400 <= response.status_code < 499:
                 if not download and 'detail' in json_data:

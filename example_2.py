@@ -2,15 +2,22 @@ import os
 import sched
 import time
 
-from kiveapi import KiveAPI
+from kiveapi import KiveAPI, KiveMalformedDataException, KiveAuthException, KiveServerException
 
 # This is how I would recommend authenticating to Kive
 KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
 kive = KiveAPI('kive', 'kive')
 
 # Upload data
-fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'), None, None, ["Everyone"])
-fastq2 = kive.add_dataset('New fastq file 2', 'None', open('exfastq2.fastq', 'r'), None, None, ["Everyone"])
+try:
+    fastq1 = kive.add_dataset('New fastq file 1', 'None', open('exfastq1.fastq', 'r'), None, None, ["Everyone"])
+except KiveMalformedDataException:
+    fastq1 = kive.find_datasets(dataset_name='New fastq file 1')[0]
+
+try:
+    fastq2 = kive.add_dataset('New fastq file 2', 'None', open('exfastq2.fastq', 'r'), None, None, ["Everyone"])
+except KiveMalformedDataException:
+    fastq2 = kive.find_datasets(dataset_name='New fastq file 2')[0]
 
 # Get the pipeline by family ID
 pipeline_family = kive.get_pipeline_family(2)

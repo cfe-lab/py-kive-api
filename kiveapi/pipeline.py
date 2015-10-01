@@ -42,8 +42,9 @@ class Pipeline(object):
         try:
             if type(obj) == dict:
                 self.pipeline_id = obj['id']
-                self.revision_name = obj['revision_name']
+                self.revision_name = obj['display_name']
                 self.revision_number = obj['revision_number']
+                self.published = obj["published"] if "published" in obj else False
                 self.inputs = [PipelineInput(i) for i in obj['inputs']]
                 self.inputs = sorted(self.inputs, key=lambda x: x.dataset_idx)
 
@@ -78,7 +79,11 @@ class PipelineFamily(object):
             self.family_id = obj['id']
             self.name = obj['name']
             self.pipelines = [Pipeline(p) for p in obj['members']]
-            self.published_version = Pipeline(obj['published_version']) if obj['published_version'] is not None else None
+            try:
+                self.published_version = [p for p in self.pipelines if p.published][0]
+            except IndexError:
+                self.published_version = None
+
 
         except (ValueError, IndexError):
             raise KiveMalformedDataException(

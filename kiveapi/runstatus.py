@@ -2,6 +2,7 @@
 This module defines a class that keeps track
 of a run in Kive.
 """
+from . import KiveRunFailedException
 from .dataset import Dataset
 
 
@@ -19,7 +20,10 @@ class RunStatus(object):
         self.api = api
 
     def _grab_stats(self):
-        return self.api.get(self.url).json()
+        data = self.api.get(self.url).json()
+        if "!" in data["status"]:
+            raise KiveRunFailedException("Run %s failed" % self.rtp_id)
+        return data
 
     def get_status(self):
         """
@@ -34,7 +38,7 @@ class RunStatus(object):
             return "Waiting to start..."
 
         if '!' in status:
-            return 'Run failed!'
+            raise KiveRunFailedException("Run %s failed" % self.rtp_id)
 
         if '*' in status and '.' not in status:
             return 'Complete.'
@@ -48,7 +52,8 @@ class RunStatus(object):
 
         :return:
         """
-        return self._grab_stats()['status'] == '?'
+        status = self._grab_stats()['status']
+        return status == '?'
 
     def is_running(self):
         """
@@ -57,8 +62,8 @@ class RunStatus(object):
 
         :return:
         """
-        status = self._grab_stats()['status']
-        return '.' in status and '!' not in status
+
+        return '.' in self._grab_stats()['status']
 
     def is_complete(self):
         """
@@ -68,7 +73,8 @@ class RunStatus(object):
         :return:
         """
         status = self._grab_stats()['status']
-        return ('.' not in status and status != '?') or '!' in status
+
+        return ('.' not in status and status != '?')
 
     def is_successful(self):
         """
@@ -77,7 +83,7 @@ class RunStatus(object):
 
         :return:
         """
-        return '!' not in self._grab_stats()['status']
+        return self.is_complete()
 
     def get_progress(self):
         """
@@ -85,6 +91,7 @@ class RunStatus(object):
 
         :return:
         """
+
         return self._grab_stats()['status']
 
     def get_progress_percent(self):

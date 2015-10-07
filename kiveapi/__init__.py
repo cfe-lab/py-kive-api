@@ -14,6 +14,11 @@ class KiveServerException(Exception):
 class KiveMalformedDataException(Exception):
     pass
 
+
+class KiveRunFailedException(Exception):
+    pass
+
+
 # Forward the class declaration
 from kiveapi import KiveAPI as kapi
 KiveAPI = kapi

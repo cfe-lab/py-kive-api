@@ -51,8 +51,7 @@ class KiveAPI(Session):
         self.verify = verify
         self.csrf_token = self.post('@api_auth', {'username': username, 'password': password}).json()['csrf_token']
         self.headers.update({'referer': self.server_url})
-        print self.csrf_token
-        print "OK"
+
 
     def _prep_url(self, url):
         if url[0] == '@':
@@ -104,7 +103,6 @@ class KiveAPI(Session):
         nargs[0] = self._prep_url(nargs[0])
         if hasattr(self, 'csrf_token'):
             nargs[1]['csrfmiddlewaretoken'] = self.csrf_token
-        print args
         return self._validate_response(super(KiveAPI, self).post(*nargs, **kwargs))
 
     def put(self, *args, **kwargs):

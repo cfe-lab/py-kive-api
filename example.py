@@ -4,7 +4,10 @@ import time
 
 from kiveapi import KiveAPI
 
+# Use HTTPS on a real server, so your password is encrypted.
 KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
+# Don't put your real password in source code, store it in a text file
+# that is only readable by your user account or some more secure storage.
 kive = KiveAPI('kive', 'kive')
 
 # Get the data by ID
@@ -41,7 +44,7 @@ def check_run(sc, run):
     print run.get_status()
 
     if run.is_running() or run.is_complete():
-        print run.get_progress(), run.get_progress_percent(), '%'
+        print '{} {:.0f}%'.format(run.get_progress(), run.get_progress_percent())
 
     if not run.is_complete():
         sc.enter(5, 1, check_run, (sc, run,))

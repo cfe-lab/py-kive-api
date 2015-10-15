@@ -28,7 +28,7 @@ class KiveAPI(Session):
             self.server_url = self.server_url[:-1]
 
         self.endpoint_map = {
-            'api_auth': '/api/auth/',
+            'api_auth': '/login/',
             'api_get_cdts': '/api/compounddatatypes/',
             'api_get_cdt': '/api/compounddatatypes/{cdt-id}/',
 
@@ -49,8 +49,17 @@ class KiveAPI(Session):
         }
         super(KiveAPI, self).__init__()
         self.verify = verify
-        self.csrf_token = self.post('@api_auth', {'username': username, 'password': password}).json()['csrf_token']
+        self.fetch_csrf_token()  # for the login request
+        self.post('@api_auth',
+                  {'username': username, 'password': password},
+                  is_json=False)
+        self.fetch_csrf_token()  # for the next request
         self.headers.update({'referer': self.server_url})
+
+
+    def fetch_csrf_token(self):
+        login_response = self.head('@api_auth')
+        self.csrf_token = login_response.cookies['csrftoken']
 
 
     def _prep_url(self, url):
@@ -60,11 +69,11 @@ class KiveAPI(Session):
             url = self.server_url + url
         return url
 
-    def _validate_response(self, response, download=False):
+    def _validate_response(self, response, is_json=True):
         try:
             if 500 <= response.status_code < 599:
                 raise KiveServerException("Server 500 error (check server config '%s!')" % self.server_url)
-            if not download:
+            if is_json:
                 json_data = response.json()
 
             if response.status_code == 404:
@@ -74,7 +83,7 @@ class KiveAPI(Session):
                 raise KiveMalformedDataException('Content verification error!')
 
             if 400 <= response.status_code < 499:
-                if not download and 'detail' in json_data:
+                if is_json and 'detail' in json_data:
                     raise KiveAuthException("Couldn't authorize request (%s)" % json_data['detail'])
                 raise KiveAuthException("Couldn't authorize request!")
 
@@ -86,24 +95,23 @@ class KiveAPI(Session):
     def get(self, *args, **kwargs):
         nargs = list(args)
         nargs[0] = self._prep_url(nargs[0])
-        download = False
 
-        if 'context' in kwargs:
-            nargs[0] = nargs[0].format(**kwargs['context'])
-            del kwargs['context']
+        is_json = kwargs.pop('is_json', True)
+        context = kwargs.pop('context', None)
+        if context:
+            nargs[0] = nargs[0].format(**context)
 
-        if 'download' in kwargs and kwargs['download']:
-            download = kwargs['download']
-            del kwargs['download']
-
-        return self._validate_response(super(KiveAPI, self).get(*nargs, **kwargs), download=download)
+        return self._validate_response(super(KiveAPI, self).get(*nargs, **kwargs),
+                                       is_json=is_json)
 
     def post(self, *args, **kwargs):
         nargs = list(args)
         nargs[0] = self._prep_url(nargs[0])
+        is_json = kwargs.pop('is_json', True)
         if hasattr(self, 'csrf_token'):
             nargs[1]['csrfmiddlewaretoken'] = self.csrf_token
-        return self._validate_response(super(KiveAPI, self).post(*nargs, **kwargs))
+        return self._validate_response(super(KiveAPI, self).post(*nargs, **kwargs),
+                                       is_json=is_json)
 
     def put(self, *args, **kwargs):
         nargs = list(args)
@@ -114,6 +122,12 @@ class KiveAPI(Session):
         nargs = list(args)
         nargs[0] = self._prep_url(nargs[0])
         return self._validate_response(super(KiveAPI, self).delete(*nargs, **kwargs))
+    
+    def head(self, *args, **kwargs):
+        newargs = list(args)
+        newargs[0] = self._prep_url(newargs[0])
+        return self._validate_response(super(KiveAPI, self).head(*newargs, **kwargs),
+                                       is_json=False)
 
     def get_datasets(self):
         """

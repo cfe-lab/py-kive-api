@@ -42,7 +42,9 @@ class Dataset(object):
         :param handle: A file handle
         """
 
-        response = self.api.get("@api_dataset_dl", context={'dataset-id': self.dataset_id}, download=True)
+        response = self.api.get("@api_dataset_dl",
+                                context={'dataset-id': self.dataset_id},
+                                is_json=False)
 
         if 400 <= response.status_code < 499:
             raise KiveAuthException("Authentication failed for download (%s)!" % self.url)
@@ -59,5 +61,7 @@ class Dataset(object):
         Returns an iterator to data set
         :return:
         """
-        response = self.api.get("@api_dataset_dl", context={'dataset-id': self.dataset_id}, download=True)
+        response = self.api.get("@api_dataset_dl",
+                                context={'dataset-id': self.dataset_id},
+                                is_json=False)
 

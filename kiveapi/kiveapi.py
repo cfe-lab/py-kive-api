@@ -9,6 +9,7 @@ from .datatype import CompoundDatatype
 from .runstatus import RunStatus
 
 from . import KiveMalformedDataException, KiveAuthException, KiveServerException
+import requests
 from requests import Session
 
 
@@ -50,9 +51,15 @@ class KiveAPI(Session):
         super(KiveAPI, self).__init__()
         self.verify = verify
         self.fetch_csrf_token()  # for the login request
-        self.post('@api_auth',
-                  {'username': username, 'password': password},
-                  is_json=False)
+        response = self.post('@api_auth',
+                             {'username': username, 'password': password},
+                             allow_redirects=False,
+                             is_json=False)
+
+        # When the login fails, it just displays the login form again.
+        # On success, it redirects to the home page (status code 'found').
+        if response.status_code != requests.codes.found:
+            raise KiveAuthException('Incorrect user name or password.')
         self.fetch_csrf_token()  # for the next request
         self.headers.update({'referer': self.server_url})
 

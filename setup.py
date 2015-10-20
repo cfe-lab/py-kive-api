@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='kiveapi',
-      version='0.2',
+      version='0.3',
       description="A front end Python client for interfacing with Kive's RESTful API.",
       author='Joshua Horacsek',
       author_email='',

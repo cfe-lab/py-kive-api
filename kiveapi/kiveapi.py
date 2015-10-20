@@ -87,7 +87,10 @@ class KiveAPI(Session):
                 raise KiveServerException('Resource not found!')
 
             if response.status_code in (400, 409):
-                raise KiveMalformedDataException('Content verification error!')
+                field_errors = '; '.join((field + ': ' + ', '.join(errors)
+                                          for field, errors in json_data.iteritems()))
+                raise KiveMalformedDataException(
+                    'Content verification error: ' + field_errors)
 
             if 400 <= response.status_code < 499:
                 if is_json and 'detail' in json_data:
@@ -242,19 +245,30 @@ class KiveAPI(Session):
             'description': description,
             'users_allowed': users_allowed,
             'groups_allowed': groups_allowed,
-            'compound_datatype': cdt.cdt_id if cdt is not None else '__raw__'
+            'compounddatatype': cdt and cdt.cdt_id
         }, files={
             'dataset_file': handle,
         }).json()
         return Dataset(dataset, self)
 
-    def run_pipeline(self, pipeline, inputs, force=False):
+    def run_pipeline(self,
+                     pipeline,
+                     inputs,
+                     force=False,
+                     users=None,
+                     groups=None):
         """
         Checks that a pipeline has the correct inputs, then
         submits the job to kive.
 
         :param pipeline: A Pipeline Object
         :param inputs: A list of Datasets
+        :param force: True if the datasets should not be checked for matching
+            compound datatypes
+        :param users: None or a list of user names that should be
+            allowed to see the run
+        :param groups: None or a list of group names that should be
+            allowed to see the run
         :return: A RunStatus object
         """
 
@@ -281,6 +295,8 @@ class KiveAPI(Session):
         # Construct the inputs
         post = {('input_%d' % (i+1)): d.symbolicdataset_id for (i, d) in enumerate(inputs)}
         post['pipeline'] = pipeline.pipeline_id
+        post['users_allowed'] = users
+        post['groups_allowed'] = groups
 
         run = self.post('@api_runs', post).json()
         return RunStatus(run, self)

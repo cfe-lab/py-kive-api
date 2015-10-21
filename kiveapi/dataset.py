@@ -56,12 +56,12 @@ class Dataset(object):
                 break
             handle.write(block)
 
-    def read(self):
+    def readlines(self):
         """
-        Returns an iterator to data set
-        :return:
+        Returns an iterator to lines in the data set
         """
         response = self.api.get("@api_dataset_dl",
                                 context={'dataset-id': self.dataset_id},
                                 is_json=False)
 
+        return response.iter_lines()

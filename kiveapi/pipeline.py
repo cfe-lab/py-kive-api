@@ -42,6 +42,7 @@ class Pipeline(object):
         try:
             if type(obj) == dict:
                 self.pipeline_id = obj['id']
+                self.family = obj['family']
                 self.revision_name = obj['display_name']
                 self.revision_number = obj['revision_number']
                 self.published = obj["published"] if "published" in obj else False
@@ -50,8 +51,10 @@ class Pipeline(object):
 
             else:
                 self.pipeline_id = object
+                self.family = None
                 self.revision_number = None
                 self.revision_name = None
+                self.published = None
                 self.inputs = None
 
         except (ValueError, IndexError):

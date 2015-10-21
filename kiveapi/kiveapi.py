@@ -11,6 +11,7 @@ from .runstatus import RunStatus
 from . import KiveMalformedDataException, KiveAuthException, KiveServerException
 import requests
 from requests import Session
+import json
 
 
 class KiveAPI(Session):
@@ -58,16 +59,14 @@ class KiveAPI(Session):
 
         # When the login fails, it just displays the login form again.
         # On success, it redirects to the home page (status code 'found').
-        if response.status_code != requests.codes.found:
+        if response.status_code != requests.codes.found:  # @UndefinedVariable
             raise KiveAuthException('Incorrect user name or password.')
         self.fetch_csrf_token()  # for the next request
         self.headers.update({'referer': self.server_url})
 
-
     def fetch_csrf_token(self):
         login_response = self.head('@api_auth')
         self.csrf_token = login_response.cookies['csrftoken']
-
 
     def _prep_url(self, url):
         if url[0] == '@':
@@ -132,7 +131,7 @@ class KiveAPI(Session):
         nargs = list(args)
         nargs[0] = self._prep_url(nargs[0])
         return self._validate_response(super(KiveAPI, self).delete(*nargs, **kwargs))
-    
+
     def head(self, *args, **kwargs):
         newargs = list(args)
         newargs[0] = self._prep_url(newargs[0])
@@ -237,8 +236,8 @@ class KiveAPI(Session):
 
         :return: Dataset object
         """
-        groups_allowed = [] if groups is None else groups
-        users_allowed = [] if users is None else users
+        users_allowed = users or []
+        groups_allowed = groups or []
 
         dataset = self.post('@api_dataset_add', {
             'name': name,
@@ -254,6 +253,7 @@ class KiveAPI(Session):
     def run_pipeline(self,
                      pipeline,
                      inputs,
+                     name=None,
                      force=False,
                      users=None,
                      groups=None):
@@ -263,6 +263,7 @@ class KiveAPI(Session):
 
         :param pipeline: A Pipeline Object
         :param inputs: A list of Datasets
+        :param name: An optional name for the run
         :param force: True if the datasets should not be checked for matching
             compound datatypes
         :param users: None or a list of user names that should be
@@ -271,6 +272,8 @@ class KiveAPI(Session):
             allowed to see the run
         :return: A RunStatus object
         """
+        users_allowed = users or []
+        groups_allowed = groups or []
 
         # Check to see if we can even call this pipeline
         if len(inputs) != len(pipeline.inputs):
@@ -293,10 +296,15 @@ class KiveAPI(Session):
                     )
 
         # Construct the inputs
-        post = {('input_%d' % (i+1)): d.symbolicdataset_id for (i, d) in enumerate(inputs)}
-        post['pipeline'] = pipeline.pipeline_id
-        post['users_allowed'] = users
-        post['groups_allowed'] = groups
+        params = dict(pipeline=pipeline.pipeline_id,
+                      inputs=[dict(symbolicdataset=d.symbolicdataset_id,
+                                   index=i)
+                              for i, d in enumerate(inputs, 1)],
+                      name=name,
+                      users_allowed=users_allowed,
+                      groups_allowed=groups_allowed)
+        form = dict(_content_type='application/json',
+                    _content=json.dumps(params))
 
-        run = self.post('@api_runs', post).json()
+        run = self.post('@api_runs', form).json()
         return RunStatus(run, self)

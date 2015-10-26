@@ -63,7 +63,8 @@ class RunStatus(object):
         :return:
         """
 
-        return '.' in self._grab_stats()['status']
+        status = self._grab_stats()
+        return status.get('start', None) and not status.get('end', None)
 
     def is_complete(self):
         """
@@ -72,9 +73,9 @@ class RunStatus(object):
 
         :return:
         """
-        status = self._grab_stats()['status']
+        status = self._grab_stats()
 
-        return ('.' not in status and status != '?')
+        return status.get('end', None) is not None
 
     def is_successful(self):
         """
@@ -108,11 +109,11 @@ class RunStatus(object):
         Gets all the datasets that resulted from this
         pipeline (including intermediate results).
 
-        :return: A list of Dataset objects, if the run is complete,
-        an empty list otherwise
+        :return: A dictionary of Dataset objects, keyed by name. If the run is
+            incomplete, return None.
         """
         if not self.is_complete():
-            return []
+            return None
 
         datasets = self.api.get(self.results_url).json()['run']['output_summary']
-        return [Dataset(d, self.api) for d in datasets if d['filename'] is not None]
+        return {d['name']: Dataset(d, self.api) for d in datasets}

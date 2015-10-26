@@ -36,32 +36,34 @@ class Dataset(object):
         return '<Dataset (%s): "%s" (%s)>' % (self.dataset_id, str(self), str(self.cdt))
 
     def download(self, handle):
-        """
-        Downloads this dataset and streams it into handle
+        """ Downloads this dataset and streams it into handle
 
         :param handle: A file handle
         """
 
+        for block in self._request_download().iter_content(1024):
+            handle.write(block)
+
+    def _request_download(self):
+        """ Send a download request for this dataset.
+
+        :return: a response object
+        """
         response = self.api.get("@api_dataset_dl",
                                 context={'dataset-id': self.dataset_id},
-                                is_json=False)
+                                is_json=False,
+                                stream=True)
 
         if 400 <= response.status_code < 499:
             raise KiveAuthException("Authentication failed for download (%s)!" % self.url)
         if not response.ok:
             raise KiveServerException("Server error downloading file (%s)!" % self.url)
 
-        for block in response.iter_content(1024):
-            if not block:
-                break
-            handle.write(block)
+        return response
 
     def readlines(self):
+        """ Returns an iterator to lines in the data set, including newlines.
         """
-        Returns an iterator to lines in the data set
-        """
-        response = self.api.get("@api_dataset_dl",
-                                context={'dataset-id': self.dataset_id},
-                                is_json=False)
 
-        return response.iter_lines()
+        for line in self._request_download().iter_lines():
+            yield line + '\n'

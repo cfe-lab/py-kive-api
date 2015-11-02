@@ -2,7 +2,7 @@ import os
 import sched
 import time
 
-from kiveapi import KiveAPI, KiveMalformedDataException, KiveAuthException, KiveServerException
+from kiveapi import KiveAPI, KiveMalformedDataException
 
 # This is how I would recommend authenticating to Kive
 KiveAPI.SERVER_URL = 'http://127.0.0.1:8000/'
@@ -36,6 +36,8 @@ status = kive.run_pipeline(
 
 # Start polling Kive
 s = sched.scheduler(time.time, time.sleep)
+
+
 def check_run(sc, run):
     print run.get_status()
 

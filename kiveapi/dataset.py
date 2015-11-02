@@ -3,7 +3,7 @@ This module defines a wrapper for Kive's Dataset
 object, and some support methods.
 """
 from .datatype import CompoundDatatype
-from . import KiveServerException, KiveAuthException, KiveMalformedDataException
+from . import KiveMalformedDataException
 
 
 class Dataset(object):
@@ -53,11 +53,6 @@ class Dataset(object):
                                 context={'dataset-id': self.dataset_id},
                                 is_json=False,
                                 stream=True)
-
-        if 400 <= response.status_code < 499:
-            raise KiveAuthException("Authentication failed for download (%s)!" % self.url)
-        if not response.ok:
-            raise KiveServerException("Server error downloading file (%s)!" % self.url)
 
         return response
 

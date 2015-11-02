@@ -8,10 +8,14 @@ from .pipeline import PipelineFamily, Pipeline
 from .datatype import CompoundDatatype
 from .runstatus import RunStatus
 
-from . import KiveMalformedDataException, KiveAuthException, KiveServerException
+from . import KiveMalformedDataException, KiveAuthException,\
+    KiveClientException, KiveServerException, is_client_error, is_server_error
 import requests
 from requests import Session
 import json
+import logging
+
+logger = logging.getLogger('kiveapi')
 
 
 class KiveAPI(Session):
@@ -59,7 +63,7 @@ class KiveAPI(Session):
 
         # When the login fails, it just displays the login form again.
         # On success, it redirects to the home page (status code 'found').
-        if response.status_code != requests.codes.found:  # @UndefinedVariable
+        if response.status_code != requests.codes['found']:
             raise KiveAuthException('Incorrect user name or password.')
         self.fetch_csrf_token()  # for the next request
         self.headers.update({'referer': self.server_url})
@@ -77,24 +81,36 @@ class KiveAPI(Session):
 
     def _validate_response(self, response, is_json=True):
         try:
-            if 500 <= response.status_code < 599:
-                raise KiveServerException("Server 500 error (check server config '%s!')" % self.server_url)
+            if not response.ok:
+                logger.warn('Error response %d for %s: %s',
+                            response.status_code,
+                            response.url,
+                            response.text)
+            if is_server_error(response.status_code):
+                raise KiveServerException("Server error {} on {}.".format(
+                    response.status_code,
+                    self.server_url))
             if is_json:
                 json_data = response.json()
+            else:
+                json_data = []
 
-            if response.status_code == 404:
+            if response.status_code == requests.codes['not_found']:
                 raise KiveServerException('Resource not found!')
 
-            if response.status_code in (400, 409):
-                field_errors = '; '.join((field + ': ' + ', '.join(errors)
-                                          for field, errors in json_data.iteritems()))
-                raise KiveMalformedDataException(
-                    'Content verification error: ' + field_errors)
-
-            if 400 <= response.status_code < 499:
+            if is_client_error(response.status_code):
+                message = 'Client error {}'.format(response.status_code)
+                if response.status_code in (requests.codes['bad_request'],
+                                            requests.codes['conflict']):
+                    if is_json:
+                        json_fields = json_data.iteritems()
+                        message += ': '
+                        message += '; '.join((field + ': ' + ', '.join(errors)
+                                              for field, errors in json_fields))
+                    raise KiveMalformedDataException(message)
                 if is_json and 'detail' in json_data:
-                    raise KiveAuthException("Couldn't authorize request (%s)" % json_data['detail'])
-                raise KiveAuthException("Couldn't authorize request!")
+                    message += ': ' + json_data['detail']
+                raise KiveClientException("Couldn't authorize request!")
 
         except ValueError:
             raise KiveMalformedDataException("Malformed response from server! (check server config '%s!')\n%s" %

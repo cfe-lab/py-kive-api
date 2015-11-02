@@ -3,22 +3,10 @@ This init module provides some simple exception classes
 and an alias to the main KiveAPI object.
 """
 
-class KiveAuthException(Exception):
-    pass
 
-
-class KiveServerException(Exception):
-    pass
-
-
-class KiveMalformedDataException(Exception):
-    pass
-
-
-class KiveRunFailedException(Exception):
-    pass
-
-
-# Forward the class declaration
-from kiveapi import KiveAPI as kapi
-KiveAPI = kapi
+from .errors import (
+    KiveAuthException, KiveClientException, KiveMalformedDataException,
+    KiveRunFailedException, KiveServerException
+)
+from .kiveapi import KiveAPI
+kapi = KiveAPI

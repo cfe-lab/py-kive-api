@@ -3,17 +3,18 @@ Contains the main class for the accessing Kive's
 RESTful API.
 
 """
-from .dataset import Dataset
-from .pipeline import PipelineFamily, Pipeline
-from .datatype import CompoundDatatype
-from .runstatus import RunStatus
-
-from . import KiveMalformedDataException, KiveAuthException,\
-    KiveClientException, KiveServerException, is_client_error, is_server_error
-import requests
-from requests import Session
 import json
 import logging
+
+import requests
+from requests import Session
+
+from .dataset import Dataset
+from .datatype import CompoundDatatype
+from .errors import KiveMalformedDataException, KiveAuthException,\
+    KiveClientException, KiveServerException, is_client_error, is_server_error
+from .pipeline import PipelineFamily, Pipeline
+from .runstatus import RunStatus
 
 logger = logging.getLogger('kiveapi')
 

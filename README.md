@@ -1,7 +1,8 @@
 # py-kive-api
-A front end Python client for interfacing with [Kive's][kive] RESTful API.
+This project has moved. It is now in the [main Kive repository][kive]. It is
+a front-end Python client for interfacing with Kive's RESTful API.
 
 ##### Requirements
 The only requirement is Python 2.7.x and the `requests` module (`pip install requests`).
 
-[kive]: http://cfe-lab.github.io/Kive/
+[kive]: https://github.com/cfe-lab/Kive/tree/master/api

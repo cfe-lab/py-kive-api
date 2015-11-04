@@ -48,6 +48,7 @@ class Pipeline(object):
                 self.published = obj["published"] if "published" in obj else False
                 self.inputs = [PipelineInput(i) for i in obj['inputs']]
                 self.inputs = sorted(self.inputs, key=lambda x: x.dataset_idx)
+                self.details = obj
 
             else:
                 self.pipeline_id = object

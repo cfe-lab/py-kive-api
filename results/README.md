@@ -1,1 +1,0 @@
-This folder is just used to dump the output datasets from running a pipeline.
